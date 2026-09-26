@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
+import { FlatList, Pressable, ScrollView, Slider, Text, View } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { COMPANY } from "../company";
 import { CATEGORY_LABEL, PRIORITY_META, STATUS_META, colors } from "../theme";
@@ -138,6 +138,7 @@ export function TicketDetailScreen({
   onCancel,
   onDelete,
 }) {
+  const [satisfaction, setSatisfaction] = useState(3);
   const status = STATUS_META[ticket.status] || STATUS_META.aberto;
   const staff = user.role === "admin" || user.role === "atendente";
   return (
@@ -190,6 +191,26 @@ export function TicketDetailScreen({
           <View style={{ marginTop: 12 }}>
             <Button title="Excluir chamado" variant="danger" onPress={onDelete} />
           </View>
+        ) : null}
+        {ticket.status === "resolvido" && !staff ? (
+          <Card style={{ marginTop: 16 }}>
+            <Text style={{ fontWeight: "800", color: colors.text, marginBottom: 10 }}>
+              Avaliar atendimento
+            </Text>
+            <Muted style={{ marginBottom: 8 }}>
+              {satisfaction}/5 — {satisfaction <= 2 ? "Ruim" : satisfaction === 3 ? " regular" : "Bom"}
+            </Muted>
+            <Slider
+              value={satisfaction}
+              onValueChange={setSatisfaction}
+              minimumValue={1}
+              maximumValue={5}
+              step={1}
+              minimumTrackTintColor={colors.primary}
+              maximumTrackTintColor={colors.line}
+              thumbTintColor={colors.primary}
+            />
+          </Card>
         ) : null}
         <Text style={{ fontWeight: "800", marginTop: 20, marginBottom: 10, color: colors.text }}>
           Histórico
