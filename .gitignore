@@ -1,0 +1,14 @@
+node_modules/
+.expo/
+dist/
+web-build/
+data/
+*.db
+*.db-shm
+*.db-wal
+.DS_Store
+.env
+.env.*
+!.env.example
+.vercel
+npm-debug.*

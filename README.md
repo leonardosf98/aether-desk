@@ -1,17 +1,15 @@
 # Aether Desk
 
-App final da pasta: help desk com versão **cliente**, **atendente** e **admin**. Mobile em Expo SDK 57.
+Help desk com versões **cliente**, **atendente** e **admin**. Mobile em Expo SDK 57.
 
 Empresa fictícia com placeholders em `mobile/company.js` e `api/src/company.js` (`{{CNPJ}}`, `{{RAZAO_SOCIAL}}`, etc.).
 
 ## Como rodar
 
-No **iPhone**, `localhost` é o próprio aparelho. O app aponta para a API na Vercel (`https://react-native-apps.vercel.app`). O Metro usa túnel (`npm start`) para o Expo Go carregar o JS.
-
-O **front web** na Vercel é o export estático do Expo (`npx expo export --platform web`). No projeto `react-native-apps-fewt`, Root Directory = `app-final/mobile`. A API continua em `react-native-apps`.
+No **iPhone**, `localhost` é o próprio aparelho. Configure `EXPO_PUBLIC_API_URL` para a API em produção ou use LAN no emulador/dispositivo na mesma rede. O Metro usa túnel (`npm start`) para o Expo Go carregar o JS.
 
 ```bash
-cd app-final/mobile
+cd mobile
 npm install
 npm start
 ```
@@ -19,14 +17,14 @@ npm start
 Backend local (opcional):
 
 ```bash
-cd app-final/api
+cd api
 npm install
 npm run seed
 npm run dev
 ```
 
 ```bash
-cd app-final/mobile
+cd mobile
 EXPO_PUBLIC_API_URL=http://localhost:3001 npx expo start --lan
 ```
 
@@ -41,11 +39,11 @@ EXPO_PUBLIC_API_URL=http://localhost:3001 npx expo start --lan
 ## Layout do projeto
 
 ```
-app-final/
+aether-desk/
   api/       backend Hono + LibSQL (Vercel)
   mobile/    Expo (cliente, atendente, admin)
 ```
 
-Um repositório basta: a Vercel publica o subdiretório `api`. Só extraia repos se o time ou o ciclo de release divergirem.
+Na Vercel: publique o subdiretório `api` como projeto da API e `mobile` como front (export estático do Expo: `npx expo export --platform web`).
 
 Arquitetura para slides: `leo-vault/personal/faculdade/dispositivos-moveis/aether-desk/`.
