@@ -1,10 +1,11 @@
-import { useMemo } from "react";
-import { Alert, Image, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Alert, Image, Switch, Text, View } from "react-native";
 import { COMPANY } from "../company";
 import { ROLE_LABEL, colors } from "../theme";
 import { Badge, Button, Card, Muted, Screen, Title } from "../ui";
 
 export function ProfileScreen({ user, onLogout }) {
+  const [notifyEnabled, setNotifyEnabled] = useState(true);
   const placeholders = useMemo(
     () => [
       ["Razão social", COMPANY.razaoSocial],
@@ -48,6 +49,20 @@ export function ProfileScreen({ user, onLogout }) {
             <Text style={{ color: colors.text, fontWeight: "600" }}>{value}</Text>
           </View>
         ))}
+      </Card>
+      <Card style={{ marginTop: 12 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontWeight: "700", color: colors.text }}>Notificações</Text>
+            <Muted>Receber alertas de novos chamados</Muted>
+          </View>
+          <Switch
+            value={notifyEnabled}
+            onValueChange={setNotifyEnabled}
+            trackColor={{ false: colors.line, true: colors.primarySoft }}
+            thumbColor={notifyEnabled ? colors.primary : "#f4f3f4"}
+          />
+        </View>
       </Card>
       <View style={{ marginTop: 16 }}>
         <Button
