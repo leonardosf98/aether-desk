@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import { COMPANY } from "../company";
 import { CATEGORY_LABEL, PRIORITY_META, STATUS_META, colors } from "../theme";
 import { Badge, Button, Card, Chip, Field, Muted, Screen, Title } from "../ui";
@@ -95,12 +96,23 @@ export function NewTicketScreen({ onSave, onBack, loading }) {
             onChange={setPriority}
           />
           <View style={{ marginTop: 8 }}>
-            <ChipGroup
-              label="Categoria"
-              options={Object.entries(CATEGORY_LABEL)}
-              value={category}
-              onChange={setCategory}
-            />
+            <Muted style={{ marginBottom: 4 }}>Categoria</Muted>
+            <View style={{
+              backgroundColor: "#F8FBFF",
+              borderWidth: 1,
+              borderColor: colors.line,
+              borderRadius: 14,
+            }}>
+              <Picker
+                selectedValue={category}
+                onValueChange={setCategory}
+                style={{ height: 48, color: colors.text }}
+              >
+                {Object.entries(CATEGORY_LABEL).map(([key, label]) => (
+                  <Picker.Item key={key} label={label} value={key} />
+                ))}
+              </Picker>
+            </View>
           </View>
           <View style={{ marginTop: 12 }}>
             <Button
