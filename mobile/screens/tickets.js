@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { COMPANY } from "../company";
 import { CATEGORY_LABEL, PRIORITY_META, STATUS_META, colors } from "../theme";
 import { Badge, Button, Card, Chip, Field, Muted, Screen, Title } from "../ui";
@@ -52,15 +52,16 @@ export function TicketListScreen({
           <Button title={createLabel || "Novo chamado"} onPress={onCreate} />
         </View>
       ) : null}
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-        {tickets.length === 0 ? (
-          <EmptyState>{empty}</EmptyState>
-        ) : (
-          tickets.map((ticket) => (
-            <TicketCard key={ticket.id} ticket={ticket} onPress={() => onOpen(ticket)} />
-          ))
+      <FlatList
+        data={tickets}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <TicketCard ticket={item} onPress={() => onOpen(item)} />
         )}
-      </ScrollView>
+        ListEmptyComponent={<EmptyState>{empty}</EmptyState>}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 24 }}
+      />
     </Screen>
   );
 }

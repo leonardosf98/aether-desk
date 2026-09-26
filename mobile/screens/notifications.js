@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { FlatList, Pressable, Text, View } from "react-native";
 import { colors } from "../theme";
 import { Card, Muted, Screen, Title } from "../ui";
 import { EmptyState } from "../components";
@@ -16,22 +16,22 @@ export function NotificationsScreen({ items, onOpen, onMarkSeen }) {
       <Muted style={{ marginTop: 6, marginBottom: 16 }}>
         Novos pedidos e mudanças de status entram aqui.
       </Muted>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {items.length === 0 ? (
-          <EmptyState>Nenhuma notificação nova.</EmptyState>
-        ) : (
-          items.map((item) => (
-            <Pressable key={item.id} onPress={() => onOpen(item)}>
-              <Card style={{ marginBottom: 10 }}>
-                <Text style={{ fontWeight: "800", color: colors.text }}>{item.ticketTitle}</Text>
-                <Muted style={{ marginTop: 4 }}>
-                  {item.actorName} · {item.type} · {formatWhen(item.createdAt)}
-                </Muted>
-              </Card>
-            </Pressable>
-          ))
+      <FlatList
+        data={items}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <Pressable onPress={() => onOpen(item)}>
+            <Card style={{ marginBottom: 10 }}>
+              <Text style={{ fontWeight: "800", color: colors.text }}>{item.ticketTitle}</Text>
+              <Muted style={{ marginTop: 4 }}>
+                {item.actorName} · {item.type} · {formatWhen(item.createdAt)}
+              </Muted>
+            </Card>
+          </Pressable>
         )}
-      </ScrollView>
+        ListEmptyComponent={<EmptyState>Nenhuma notificação nova.</EmptyState>}
+        showsVerticalScrollIndicator={false}
+      />
     </Screen>
   );
 }
