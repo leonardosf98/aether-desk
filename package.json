@@ -1,7 +1,7 @@
 {
   "name": "aether-desk",
   "version": "1.0.0",
-  "main": "node_modules/expo/AppEntry.js",
+  "main": "expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -11,7 +11,6 @@
   "dependencies": {
     "@react-native-picker/picker": "^2.11.4",
     "expo": "^57.0.0",
-    "expo-asset": "~57.0.16",
     "expo-secure-store": "~57.0.3",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Image, Keyboard, Pressable, ScrollView, Text, View } from "react-native";
+import { Keyboard, Pressable, ScrollView, Text, View } from "react-native";
 import { COMPANY } from "../company";
 import { colors } from "../theme";
 import { Button, Card, Field, Muted, Screen, Title } from "../ui";
@@ -21,15 +21,19 @@ export function LoginScreen({ onLogin, onGoRegister, loading, error }) {
       >
         {/* Pressable e não aquele de opacity */}
         <Pressable onPress={Keyboard.dismiss}> 
-          <Image
-            source={require("../assets/logo.png")}
+          <View
             style={{
               width: 56,
               height: 56,
               borderRadius: 18,
               marginBottom: 18,
+              backgroundColor: colors.primaryDark,
+              alignItems: "center",
+              justifyContent: "center",
             }}
-          />
+          >
+            <Text style={{ color: "#fff", fontSize: 22, fontWeight: "800" }}>A</Text>
+          </View>
           <Title>{COMPANY.nomeFantasia}</Title>
           <Muted style={{ marginTop: 8, marginBottom: 24 }}>
             Central de chamados. CNPJ {COMPANY.cnpj}

@@ -15,15 +15,6 @@
       "adaptiveIcon": {
         "backgroundColor": "#1D4ED8"
       }
-    },
-    "plugins": [
-      "expo-asset",
-      "expo-secure-store",
-      "expo-status-bar"
-    ],
-    "web": {
-      "bundler": "metro",
-      "output": "single"
     }
   }
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert, Image, Switch, Text, View } from "react-native";
+import { Alert, Switch, Text, View } from "react-native";
 import { COMPANY } from "../company";
 import { ROLE_LABEL, colors } from "../theme";
 import { Badge, Button, Card, Muted, Screen, Title } from "../ui";
@@ -22,10 +22,19 @@ export function ProfileScreen({ user, onLogout }) {
       <Title>Conta</Title>
       <Card style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-          <Image
-            source={require("../assets/logo.png")}
-            style={{ width: 48, height: 48, borderRadius: 24, marginRight: 12 }}
-          />
+          <View
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              marginRight: 12,
+              backgroundColor: colors.primaryDark,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 18, fontWeight: "800" }}>A</Text>
+          </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 20, fontWeight: "800", color: colors.text }}>{user.name}</Text>
             <Muted style={{ marginTop: 4 }}>{user.email}</Muted>
