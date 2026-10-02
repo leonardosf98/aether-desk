@@ -262,6 +262,21 @@ As telas ficam agrupadas por domínio, e `screens/index.js` reexporta todas:
 | `SecureStore` | `expo-secure-store` | authStore.js (token JWT) |
 | `StatusBar` | `expo-status-bar` | app.js |
 
+### Por que `Slider` e `Picker` não vêm de `react-native`?
+
+Os dois **foram removidos do núcleo do React Native**. No movimento *Lean Core*, a equipe do React Native tirou do pacote principal os componentes que nem todo app usa, para deixar o core menor e mais fácil de manter. Eles continuam existindo, mas agora como pacotes da comunidade, mantidos à parte:
+
+| Componente | Antes | Agora |
+|---|---|---|
+| `Slider` | `import { Slider } from "react-native"` | `import Slider from "@react-native-community/slider"` |
+| `Picker` | `import { Picker } from "react-native"` | `import { Picker } from "@react-native-picker/picker"` |
+
+Na versão usada no projeto (React Native 0.86), importar `Slider` de `react-native` quebra o app com o erro:
+
+> Slider has been removed from react-native core. It can now be installed and imported from '@react-native-community/slider' instead of 'react-native'.
+
+O `Picker` nem é mais exportado pelo core. Por isso os dois entram como dependências no `mobile/package.json`. O uso continua o mesmo de antes: são componentes nativos, renderizados pelo iOS e pelo Android, só que instalados por fora.
+
 ---
 
 ## API (`api/`)
