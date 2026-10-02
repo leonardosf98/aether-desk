@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { api } from "../apiClient";
 
 export function useTickets(token) {
@@ -6,13 +6,15 @@ export function useTickets(token) {
   const [detail, setDetail] = useState(null);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const lastRequestRef = useRef(0);
 
   const refreshTickets = useCallback(
     async (tab) => {
       if (!token) return;
+      const request = ++lastRequestRef.current;
       const query = tab === "mine" ? "?mine=1" : "";
       const data = await api(`/tickets${query}`, { token });
-      setTickets(data.tickets);
+      if (request === lastRequestRef.current) setTickets(data.tickets);
     },
     [token],
   );
