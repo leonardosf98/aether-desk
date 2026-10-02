@@ -180,6 +180,7 @@ Um arquivo por primitivo, reexportados por `components/ui/index.js`. Cada um é 
 | `Muted` | Texto menor (14px, cinza) | Descrições e textos secundários |
 | `Badge` | Pílula colorida (fundo + texto) | Indica estado de forma compacta |
 | `Field` | Label + `TextInput` estilizado, com `secure` e `multiline` | Todo formulário precisa de input |
+| `FieldLabel` | Rótulo pequeno em negrito acima do campo | Mesmo visual em `Field`, `PickerField` e `ChipGroup` |
 | `Button` | Botão com 3 variantes (primary, ghost, danger) e estado `loading` | Ações principais, secundárias e destrutivas |
 | `Chip` | Pílula clicável (selecionado/não selecionado) | Seleção visual de prioridade, status, papel e atendente |
 | `SectionTitle` | Texto em negrito com espaço abaixo | Título de seção dentro de um card |

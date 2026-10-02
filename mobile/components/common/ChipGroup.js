@@ -1,6 +1,5 @@
-import { Text, View } from "react-native";
-import { colors } from "../../theme";
-import { Chip } from "../ui";
+import { View } from "react-native";
+import { Chip, FieldLabel } from "../ui";
 
 /*
   Grupo de chips com label: monta uma linha de Chip a partir de options [key, label].
@@ -31,8 +30,8 @@ import { Chip } from "../ui";
 */
 export function ChipGroup({ label, options, value, onChange }) {
   return (
-    <>
-      <Text style={{ color: colors.muted, marginBottom: 8 }}>{label}</Text>
+    <View style={{ marginBottom: 6 }}>
+      <FieldLabel>{label}</FieldLabel>
       <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
         {options.map(([key, optionLabel]) => (
           <Chip
@@ -43,6 +42,6 @@ export function ChipGroup({ label, options, value, onChange }) {
           />
         ))}
       </View>
-    </>
+    </View>
   );
 }

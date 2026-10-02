@@ -1,5 +1,6 @@
-import { Text, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
 import { colors } from "../../theme";
+import { FieldLabel } from "./FieldLabel";
 import { inputBox } from "./inputBox";
 
 export function Field({
@@ -13,9 +14,7 @@ export function Field({
 }) {
   return (
     <View style={{ marginBottom: 14 }}>
-      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700", marginBottom: 6 }}>
-        {label}
-      </Text>
+      <FieldLabel>{label}</FieldLabel>
       <TextInput
         value={value}
         onChangeText={onChangeText}
