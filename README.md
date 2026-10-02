@@ -1,8 +1,8 @@
 # Aether Desk
 
-Help desk com versões **cliente**, **atendente** e **admin**. Mobile em Expo SDK 57 (React Native 0.86), API em Hono.
+Help desk com versões **cliente**, **atendente** e **admin**. Mobile em Expo SDK 57 (React Native 0.86), API em Hono, framework de js bem simples.
 
-Empresa fictícia com placeholders em `mobile/company.js` e `api/src/company.js` (`{{CNPJ}}`, `{{RAZAO_SOCIAL}}`, etc.).
+Empresa fictícia com placeholders em `mobile/company.js` e `api/src/company.js` (`{{CNPJ}}`, `{{RAZAO_SOCIAL}}`, etc.). Ainda, não fizemos o preenchimento.
 
 ---
 
@@ -35,12 +35,17 @@ aether-desk/
     ui.js              design system (Screen, Button, Chip…)
     hooks/             estado + chamadas à API por domínio
     screens/           telas agrupadas por domínio
-    components/        componentes compostos (BackLink, EmptyState…)
+    components/        barrel index.js
+      common/          layout, formulário, links (BackLink, FormScroll…)
+      tickets/         lista e detalhe de chamados (TicketCard…)
+      users/           CRUD de usuários (UserCard, NewUserForm)
+      profile/         perfil e dados da empresa
+      notifications/   item da fila ao vivo
     utils/             helpers (ex.: formatWhen)
-  assets/              logo.png (login e perfil)
+    assets/            logo.png (login e perfil)
 ```
 
-Cada pasta do mobile tem um `index.js` (barrel) pra importar de um lugar só (`from "./hooks"`, `from "./screens"`, etc.).
+`hooks/`, `screens/` e `utils/` têm `index.js` (barrel). `components/index.js` reexporta `common/` e as subpastas por domínio — nas telas use `from "../components"`.
 
 ### Roteamento manual
 
@@ -81,7 +86,7 @@ flowchart TD
     app["app.js<br/>tab state, autenticação, roteamento"]
     hooks["hooks/<br/>estado + chamadas à API"]
     screens["screens/<br/>telas agrupadas por domínio"]
-    components["components/<br/>componentes compostos"]
+    components["components/<br/>common + domínios<br/>(tickets, users…)"]
     ui["ui.js<br/>design system"]
     theme["theme.js<br/>cores, status, prioridade, categoria, papel"]
     utils["utils/<br/>formatWhen (datas pt-BR)"]
@@ -169,14 +174,15 @@ Biblioteca de design system. Cada componente é uma função que retorna JSX com
 
 ### Componentes compostos (`components/`)
 
-| Componente | O que faz | Por quê |
-|---|---|---|
-| `BackLink` | Texto clicável "Voltar" (label configurável) | Navegação de retorno mais leve que um botão |
-| `ChipGroup` | Label + linha de `Chip` a partir de `options` `[key, label]` | Evita repetir o mapeamento de chips em cada formulário |
-| `EmptyState` | `Card` com texto em negrito via `children` | Lista vazia sem parecer erro de rede |
-| `ErrorText` | Texto vermelho de erro — só renderiza se houver `children` | Feedback de formulário sem ocupar espaço quando não há erro |
+Import único via `components/index.js`. Subpastas por domínio; o que é transversal fica em `common/`.
 
-O `TicketCard` não fica em `components/`: ele é exportado de `screens/tickets.js`, junto das telas de chamado. Mostra status, prioridade, título, descrição, categoria, data e atendente.
+| Pasta | Componentes | Papel |
+|---|---|---|
+| `common/` | `BackLink`, `TextLink`, `ChipGroup`, `EmptyState`, `ErrorText`, `FormScroll`, `ScreenHeader`, `SectionTitle`, `Logo`, `EmailField`, `PasswordField`, `PickerField`, `SwitchRow`, `InfoRow` | Layout, auth, formulários e feedback |
+| `tickets/` | `TicketCard`, `TicketPeople`, `AssignAgent`, `TicketHistory`, `SatisfactionRating` | Lista, detalhe e ações do chamado |
+| `users/` | `UserCard`, `NewUserForm` | Administração de usuários |
+| `profile/` | `UserSummary`, `CompanyCard` | Conta e dados fictícios da empresa |
+| `notifications/` | `NotificationItem` | Linha da fila ao vivo |
 
 ---
 
@@ -187,21 +193,21 @@ As telas ficam agrupadas por domínio, e `screens/index.js` reexporta todas:
 | Arquivo | Exporta |
 |---|---|
 | `auth.js` | `LoginScreen`, `RegisterScreen` |
-| `tickets.js` | `TicketCard`, `TicketListScreen`, `NewTicketScreen`, `TicketDetailScreen` |
+| `tickets.js` | `TicketListScreen`, `NewTicketScreen`, `TicketDetailScreen` |
 | `notifications.js` | `NotificationsScreen` |
 | `profile.js` | `ProfileScreen` |
 | `users.js` | `UsersScreen` |
 
 | Tela | Componentes usados | Estado local | Descrição |
 |---|---|---|---|
-| `LoginScreen` | Screen, ScrollView, Pressable, Image, Title, Muted, Card, Field, Button, ErrorText | useState (email, password) | Login, já preenchido com a conta de cliente demo |
-| `RegisterScreen` | Screen, ScrollView, Pressable, Title, Muted, Card, Field, Button, ErrorText | useState (name, email, password) | Cadastro de cliente |
-| `TicketListScreen` | Screen, Title, Muted, Button, FlatList, TicketCard, EmptyState | — | Lista de chamados: "Meus chamados" (cliente), "Fila" e "Comigo" (equipe). Só o cliente vê "Novo chamado" |
-| `NewTicketScreen` | Screen, BackLink, Title, Muted, ScrollView, Card, Field, ChipGroup, Picker, Button | useState (title, description, priority, category) | Abertura de chamado |
-| `TicketDetailScreen` | Screen, BackLink, ScrollView, Badge, Title, Muted, Card, Chip, ChipGroup, Slider, Button | useState (satisfaction) | Detalhe e histórico. Equipe atribui atendente e muda status; cliente cancela chamado aberto; admin exclui; cliente avalia chamado resolvido (1–5, só local, não vai para a API) |
-| `NotificationsScreen` | Screen, Title, Pressable, Muted, FlatList, Card, EmptyState | — | "Fila ao vivo" da equipe, alimentada pelo polling do `useNotifications`. "Limpar" zera a lista |
-| `ProfileScreen` | Screen, Title, Card, Image, Muted, Badge, Switch, Button | useState (notifyEnabled), useMemo | Perfil do usuário + dados da empresa. O Switch de notificações é só local. Sair pede confirmação com `Alert` |
-| `UsersScreen` | Screen, Title, Muted, Button, Card, Field, ChipGroup, ScrollView, Chip | useState (open, name, email, password, role) | CRUD de usuários (só admin): criar, mudar papel, ativar/desativar, remover |
+| `LoginScreen` | Screen, FormScroll, Logo, ScreenHeader, Card, EmailField, PasswordField, Button, ErrorText | useState (email, password) | Login, já preenchido com a conta de cliente demo |
+| `RegisterScreen` | Screen, FormScroll, BackLink, ScreenHeader, Card, Field, EmailField, PasswordField, Button, ErrorText | useState (name, email, password) | Cadastro de cliente |
+| `TicketListScreen` | Screen, ScreenHeader, Button, FlatList, TicketCard, EmptyState | — | Lista de chamados: "Meus chamados" (cliente), "Fila" e "Comigo" (equipe). Só o cliente vê "Novo chamado" |
+| `NewTicketScreen` | Screen, BackLink, ScreenHeader, ScrollView, Card, Field, ChipGroup, PickerField, Button | useState (title, description, priority, category) | Abertura de chamado |
+| `TicketDetailScreen` | Screen, BackLink, ScrollView, Badge, Title, Muted, TicketPeople, AssignAgent, ChipGroup, SatisfactionRating, TicketHistory, Button | — | Detalhe e histórico. Equipe atribui atendente e muda status; cliente cancela chamado aberto; admin exclui; cliente avalia chamado resolvido (1–5, só local, não vai para a API) |
+| `NotificationsScreen` | Screen, ScreenHeader, TextLink, FlatList, NotificationItem, EmptyState | — | "Fila ao vivo" da equipe, alimentada pelo polling do `useNotifications`. "Limpar" zera a lista |
+| `ProfileScreen` | Screen, ScreenHeader, UserSummary, CompanyCard, SwitchRow, Button | useState (notifyEnabled) | Perfil do usuário + dados da empresa. O Switch de notificações é só local. Sair pede confirmação com `Alert` |
+| `UsersScreen` | Screen, ScreenHeader, NewUserForm, FlatList, UserCard | — | CRUD de usuários (só admin): criar, mudar papel, ativar/desativar, remover |
 
 ---
 
@@ -226,17 +232,17 @@ As telas ficam agrupadas por domínio, e `screens/index.js` reexporta todas:
 | Componente | De onde vem | Onde |
 |---|---|---|
 | `View`, `Text` | `react-native` | Todos os componentes e telas |
-| `Image` | `react-native` | LoginScreen (logo) + ProfileScreen (avatar), ambos com `assets/logo.png` |
+| `Image` | `react-native` | Via `Logo` e `UserSummary` (`mobile/assets/logo.png`) |
 | `TextInput` | `react-native` | Via `Field` em ui.js |
-| `Pressable` | `react-native` | Button, Chip, TabBar, BackLink, TicketCard e links de texto |
-| `ScrollView` | `react-native` | Login, Register, NewTicket, TicketDetail, Users |
-| `FlatList` | `react-native` | TicketListScreen + NotificationsScreen |
-| `Switch` | `react-native` | ProfileScreen (toggle de notificações) |
-| `Slider` | `react-native` | TicketDetailScreen (avaliação de satisfação 1–5) |
+| `Pressable` | `react-native` | Button, Chip, TabBar, TextLink, TicketCard, NotificationItem |
+| `ScrollView` | `react-native` | FormScroll, NewTicket, TicketDetail |
+| `FlatList` | `react-native` | TicketListScreen, NotificationsScreen, UsersScreen |
+| `Switch` | `react-native` | Via `SwitchRow` no ProfileScreen |
+| `Slider` | `@react-native-community/slider` | Via `SatisfactionRating` no detalhe do chamado |
 | `ActivityIndicator` | `react-native` | Boot do app + `Button` em loading |
 | `KeyboardAvoidingView` | `react-native` | Via `Screen` em ui.js |
 | `Alert` | `react-native` | ProfileScreen (confirmação de saída) |
-| `Picker` | `@react-native-picker/picker` | NewTicketScreen (seletor de categoria) |
+| `Picker` | `@react-native-picker/picker` | Via `PickerField` em NewTicketScreen |
 | `SecureStore` | `expo-secure-store` | authStore.js (token JWT) |
 | `StatusBar` | `expo-status-bar` | app.js |
 
@@ -338,7 +344,7 @@ EXPO_PUBLIC_API_URL=http://localhost:3001 npx expo start --lan
 aether-desk/
   api/       backend Hono + node:sqlite (Vercel)
   mobile/    Expo (cliente, atendente, admin)
-  assets/    logo.png usado no login e no perfil
+             assets/logo.png · components/{common,tickets,users,profile,notifications}
 ```
 
 Na Vercel: publique o subdiretório `api` como projeto da API (`api/vercel.json` manda tudo para a function `api/index.js`) e `mobile` como front (`mobile/vercel.json` roda `npx expo export --platform web` e publica `dist`).
