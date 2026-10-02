@@ -1,7 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
-import { api } from "./apiClient";
 import { useAuth, useNotifications, useTickets, useUsers } from "./hooks";
 import {
   LoginScreen,
@@ -75,6 +74,7 @@ export default function App() {
   if (auth.boot) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center" }}>
+        {/* Em resumo isso aqui é um spinner */}
         <ActivityIndicator color={colors.primary} />
       </View>
     );

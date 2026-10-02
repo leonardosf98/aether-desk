@@ -1,39 +1,24 @@
 import { useState } from "react";
-import { FlatList, Pressable, ScrollView, Slider, Text, View } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import { FlatList, ScrollView } from "react-native";
 import { COMPANY } from "../company";
-import { CATEGORY_LABEL, PRIORITY_META, STATUS_META, colors } from "../theme";
-import { Badge, Button, Card, Chip, Field, Muted, Screen, Title } from "../ui";
-import { BackLink, ChipGroup, EmptyState } from "../components";
-import { formatWhen } from "../utils";
+import { CATEGORY_LABEL, PRIORITY_META, STATUS_META } from "../theme";
+import { Badge, Button, Card, Field, Muted, Screen, Title } from "../ui";
+import {
+  AssignAgent,
+  BackLink,
+  ChipGroup,
+  EmptyState,
+  PickerField,
+  SatisfactionRating,
+  ScreenHeader,
+  TicketCard,
+  TicketHistory,
+  TicketPeople,
+} from "../components";
 
-export function TicketCard({ ticket, onPress }) {
-  const status = STATUS_META[ticket.status] || STATUS_META.aberto;
-  const priority = PRIORITY_META[ticket.priority] || PRIORITY_META.media;
-  return (
-    <Pressable onPress={onPress}>
-      <Card style={{ marginBottom: 12 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
-          <Badge label={status.label} color={status.color} bg={status.bg} />
-          <Text style={{ color: priority.color, fontWeight: "800", fontSize: 12 }}>
-            {priority.label}
-          </Text>
-        </View>
-        <Text style={{ fontSize: 17, fontWeight: "800", color: colors.text }}>{ticket.title}</Text>
-        <Muted style={{ marginTop: 6 }} numberOfLines={2}>
-          {ticket.description}
-        </Muted>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 12 }}>
-          <Muted>{CATEGORY_LABEL[ticket.category] || ticket.category}</Muted>
-          <Muted>{formatWhen(ticket.createdAt)}</Muted>
-        </View>
-        {ticket.agentName ? (
-          <Muted style={{ marginTop: 6 }}>Atendente: {ticket.agentName}</Muted>
-        ) : null}
-      </Card>
-    </Pressable>
-  );
-}
+const PRIORITY_OPTIONS = Object.entries(PRIORITY_META).map(([key, meta]) => [key, meta.label]);
+const STATUS_OPTIONS = Object.entries(STATUS_META).map(([key, meta]) => [key, meta.label]);
+const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABEL);
 
 export function TicketListScreen({
   title,
@@ -46,19 +31,18 @@ export function TicketListScreen({
 }) {
   return (
     <Screen>
-      <Title>{title}</Title>
-      <Muted style={{ marginTop: 6, marginBottom: 16 }}>{subtitle}</Muted>
+      <ScreenHeader title={title} subtitle={subtitle} />
       {onCreate ? (
-        <View style={{ marginBottom: 14 }}>
-          <Button title={createLabel || "Novo chamado"} onPress={onCreate} />
-        </View>
+        <Button
+          title={createLabel || "Novo chamado"}
+          onPress={onCreate}
+          style={{ marginBottom: 14 }}
+        />
       ) : null}
       <FlatList
         data={tickets}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
-          <TicketCard ticket={item} onPress={() => onOpen(item)} />
-        )}
+        renderItem={({ item }) => <TicketCard ticket={item} onPress={() => onOpen(item)} />}
         ListEmptyComponent={<EmptyState>{empty}</EmptyState>}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24 }}
@@ -75,11 +59,11 @@ export function NewTicketScreen({ onSave, onBack, loading }) {
   return (
     <Screen>
       <BackLink onPress={onBack} />
-      <Title>Abrir chamado</Title>
-      <Muted style={{ marginTop: 6, marginBottom: 16 }}>
-        A equipe de {COMPANY.nomeFantasia} recebe o pedido na fila.
-      </Muted>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScreenHeader
+        title="Abrir chamado"
+        subtitle={`A equipe de ${COMPANY.nomeFantasia} recebe o pedido na fila.`}
+      />
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Card>
           <Field label="Título" value={title} onChangeText={setTitle} placeholder="Resumo do problema" />
           <Field
@@ -89,38 +73,13 @@ export function NewTicketScreen({ onSave, onBack, loading }) {
             multiline
             placeholder="O que aconteceu, quando, e o que já tentou."
           />
-          <ChipGroup
-            label="Prioridade"
-            options={Object.entries(PRIORITY_META).map(([k, v]) => [k, v.label])}
-            value={priority}
-            onChange={setPriority}
+          <ChipGroup label="Prioridade" options={PRIORITY_OPTIONS} value={priority} onChange={setPriority} />
+          <PickerField label="Categoria" options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
+          <Button
+            title="Enviar chamado"
+            loading={loading}
+            onPress={() => onSave({ title, description, priority, category })}
           />
-          <View style={{ marginTop: 8 }}>
-            <Muted style={{ marginBottom: 4 }}>Categoria</Muted>
-            <View style={{
-              backgroundColor: "#F8FBFF",
-              borderWidth: 1,
-              borderColor: colors.line,
-              borderRadius: 14,
-            }}>
-              <Picker
-                selectedValue={category}
-                onValueChange={setCategory}
-                style={{ height: 48, color: colors.text }}
-              >
-                {Object.entries(CATEGORY_LABEL).map(([key, label]) => (
-                  <Picker.Item key={key} label={label} value={key} />
-                ))}
-              </Picker>
-            </View>
-          </View>
-          <View style={{ marginTop: 12 }}>
-            <Button
-              title="Enviar chamado"
-              loading={loading}
-              onPress={() => onSave({ title, description, priority, category })}
-            />
-          </View>
         </Card>
       </ScrollView>
     </Screen>
@@ -138,7 +97,6 @@ export function TicketDetailScreen({
   onCancel,
   onDelete,
 }) {
-  const [satisfaction, setSatisfaction] = useState(3);
   const status = STATUS_META[ticket.status] || STATUS_META.aberto;
   const staff = user.role === "admin" || user.role === "atendente";
   return (
@@ -148,81 +106,21 @@ export function TicketDetailScreen({
         <Badge label={status.label} color={status.color} bg={status.bg} />
         <Title style={{ fontSize: 24, marginTop: 10 }}>{ticket.title}</Title>
         <Muted style={{ marginTop: 8 }}>{ticket.description}</Muted>
-        <Card style={{ marginTop: 16 }}>
-          <Muted>Cliente</Muted>
-          <Text style={{ fontWeight: "700", color: colors.text, marginBottom: 8 }}>
-            {ticket.clientName}
-          </Text>
-          <Muted>Atendente</Muted>
-          <Text style={{ fontWeight: "700", color: colors.text }}>
-            {ticket.agentName || "Não atribuído"}
-          </Text>
-        </Card>
+        <TicketPeople ticket={ticket} />
         {staff ? (
           <Card style={{ marginTop: 12 }}>
-            <Text style={{ fontWeight: "800", color: colors.text, marginBottom: 10 }}>
-              Atribuir atendente
-            </Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              <Chip label="Ninguém" selected={!ticket.agentId} onPress={() => onAssign(null)} />
-              {agents.map((agent) => (
-                <Chip
-                  key={agent.id}
-                  label={agent.name}
-                  selected={ticket.agentId === agent.id}
-                  onPress={() => onAssign(agent.id)}
-                />
-              ))}
-            </View>
-            <ChipGroup
-              label="Status"
-              options={Object.entries(STATUS_META).map(([k, v]) => [k, v.label])}
-              value={ticket.status}
-              onChange={onStatus}
-            />
+            <AssignAgent agents={agents} agentId={ticket.agentId} onAssign={onAssign} />
+            <ChipGroup label="Status" options={STATUS_OPTIONS} value={ticket.status} onChange={onStatus} />
           </Card>
         ) : null}
         {!staff && ticket.status === "aberto" ? (
-          <View style={{ marginTop: 12 }}>
-            <Button title="Cancelar chamado" variant="danger" onPress={onCancel} />
-          </View>
+          <Button title="Cancelar chamado" variant="danger" onPress={onCancel} style={{ marginTop: 12 }} />
         ) : null}
         {user.role === "admin" ? (
-          <View style={{ marginTop: 12 }}>
-            <Button title="Excluir chamado" variant="danger" onPress={onDelete} />
-          </View>
+          <Button title="Excluir chamado" variant="danger" onPress={onDelete} style={{ marginTop: 12 }} />
         ) : null}
-        {ticket.status === "resolvido" && !staff ? (
-          <Card style={{ marginTop: 16 }}>
-            <Text style={{ fontWeight: "800", color: colors.text, marginBottom: 10 }}>
-              Avaliar atendimento
-            </Text>
-            <Muted style={{ marginBottom: 8 }}>
-              {satisfaction}/5 — {satisfaction <= 2 ? "Ruim" : satisfaction === 3 ? " regular" : "Bom"}
-            </Muted>
-            <Slider
-              value={satisfaction}
-              onValueChange={setSatisfaction}
-              minimumValue={1}
-              maximumValue={5}
-              step={1}
-              minimumTrackTintColor={colors.primary}
-              maximumTrackTintColor={colors.line}
-              thumbTintColor={colors.primary}
-            />
-          </Card>
-        ) : null}
-        <Text style={{ fontWeight: "800", marginTop: 20, marginBottom: 10, color: colors.text }}>
-          Histórico
-        </Text>
-        {(events || []).map((event) => (
-          <View key={event.id} style={{ marginBottom: 10 }}>
-            <Text style={{ fontWeight: "700", color: colors.text }}>
-              {event.actorName} · {event.type}
-            </Text>
-            <Muted>{formatWhen(event.createdAt)}</Muted>
-          </View>
-        ))}
+        {ticket.status === "resolvido" && !staff ? <SatisfactionRating key={ticket.id} /> : null}
+        <TicketHistory events={events} />
       </ScrollView>
     </Screen>
   );
