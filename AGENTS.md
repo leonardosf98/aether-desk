@@ -1,12 +1,12 @@
 # AGENTS
 
-Help desk Aether Desk: API Hono + mobile Expo.
+Help desk Aether Desk: API Hono + SQLite nativo do Node (`node:sqlite`) + mobile Expo.
 
 ## Pastas
 
 | Pasta | Papel |
 |---|---|
-| `api/` | Backend Hono + LibSQL (deploy Vercel) |
+| `api/` | Backend Hono + `node:sqlite` (Node 22.5+, deploy Vercel com banco em memória) |
 | `mobile/` | App Expo SDK 57 (cliente, atendente, admin) |
 
 ## Como trabalhar
