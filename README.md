@@ -43,7 +43,7 @@ aether-desk/
       profile/         perfil e dados da empresa
       notifications/   item da fila ao vivo
     utils/             helpers (ex.: formatWhen)
-    assets/            logo.png (login e perfil)
+    assets/            logo.js: logo em base64 (login e perfil)
 ```
 
 `hooks/`, `screens/` e `utils/` têm `index.js` (barrel). `components/index.js` reexporta `ui/`, `common/`, `navigation/` e as subpastas por domínio — nas telas e no `app.js` use `from "../components"`. Dentro de `components/`, importe os primitivos de `../ui`.
@@ -248,7 +248,7 @@ As telas ficam agrupadas por domínio, e `screens/index.js` reexporta todas:
 | Componente | De onde vem | Onde |
 |---|---|---|
 | `View`, `Text` | `react-native` | Todos os componentes e telas |
-| `Image` | `react-native` | Via `Logo` e `UserSummary` (`mobile/assets/logo.png`) |
+| `Image` | `react-native` | Via `Logo` e `UserSummary` (data URI de `mobile/assets/logo.js`) |
 | `TextInput` | `react-native` | Via `Field` (`components/ui`) |
 | `Pressable` | `react-native` | Button, Chip, TabBar, TextLink, TicketCard, NotificationItem |
 | `ScrollView` | `react-native` | FormScroll, NewTicket, TicketDetail |
@@ -375,8 +375,10 @@ EXPO_PUBLIC_API_URL=http://localhost:3001 npx expo start --lan
 aether-desk/
   api/       backend Hono + node:sqlite (Vercel)
   mobile/    Expo (cliente, atendente, admin)
-             assets/logo.png · components/{ui,common,navigation,tickets,users,profile,notifications}
+             assets/logo.js · components/{ui,common,navigation,tickets,users,profile,notifications}
 ```
+
+O logo fica em `assets/logo.js` como data URI (base64), e não como `.png`: o import de repositório git do Expo Snack falha ao subir arquivos binários (`VALIDATION_ERROR "$": Required`). Assim o `Image` continua funcionando no Snack, no app e na web.
 
 Na Vercel: publique o subdiretório `api` como projeto da API (`api/vercel.json` manda tudo para a function `api/index.js`) e `mobile` como front (`mobile/vercel.json` roda `npx expo export --platform web` e publica `dist`).
 
