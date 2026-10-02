@@ -1,6 +1,6 @@
 # Aether Desk
 
-Help desk com versões **cliente**, **atendente** e **admin**. Mobile em Expo SDK 57.
+Help desk com versões **cliente**, **atendente** e **admin**. Mobile em Expo SDK 57 (React Native 0.86), API em Hono.
 
 Empresa fictícia com placeholders em `mobile/company.js` e `api/src/company.js` (`{{CNPJ}}`, `{{RAZAO_SOCIAL}}`, etc.).
 
@@ -8,57 +8,109 @@ Empresa fictícia com placeholders em `mobile/company.js` e `api/src/company.js`
 
 ## Arquitetura
 
-```
-┌─────────────────────────────┐
-│  autenticando?              │
-│  Sim → ActivityIndicator    │
-│  Não → usuário logado?      │
-│         Não → Login/Register│
-│         Sim → tab atual:    │
-│           tickets → TicketListScreen
-│           queue   → TicketListScreen (fila)
-│           mine    → TicketListScreen (meus)
-│           inbox   → NotificationsScreen
-│           users   → UsersScreen
-│           profile → ProfileScreen
-│           (criando) → NewTicketScreen
-│           (detalhe) → TicketDetailScreen
-└─────────────────────────────┘
-```
+### Roteamento manual
 
 O projeto **deliberadamente não usa React Navigation**. O roteamento é feito com `useState` no `app.js` — cada valor de `tab` mapeia para um componente React. Isso deixa claro o conceito de "estado controla a UI".
 
+```mermaid
+flowchart TD
+    A([App]) --> B{auth.boot?}
+    B -- sim --> C[ActivityIndicator]
+    B -- não --> D{usuário logado?}
+    D -- não --> E{authMode}
+    E -- login --> F[LoginScreen]
+    E -- register --> G[RegisterScreen]
+    D -- sim --> H{tickets.creating?}
+    H -- sim --> I[NewTicketScreen]
+    H -- não --> J{tickets.detail?}
+    J -- sim --> K[TicketDetailScreen]
+    J -- não --> L{tab}
+    L -- "tickets / queue / mine" --> M[TicketListScreen]
+    L -- inbox --> N[NotificationsScreen]
+    L -- users --> O[UsersScreen]
+    L -- profile --> P[ProfileScreen]
 ```
-mobile/
-  app.js              → orquestração: tab state, autenticação, roteamento manual
-  ui.js               → biblioteca de componentes reutilizáveis (Card, Button, Field, etc.)
-  theme.js            → paleta de cores, metadados de status/prioridade/categoria
-  screens/            → telas (uma export por arquivo)
-  components/         → componentes compostos específicos do domínio
-  hooks/              → hooks customizados (lógica de estado + API)
-  apiClient.js        → wrapper fetch com JWT
-  authStore.js        → AsyncStorage para token
-  company.js          → dados fictícios da empresa (CNPJ, endereço, etc.)
+
+As abas disponíveis dependem do papel do usuário (`tabsFor` no `app.js`). A `TabBar` some enquanto um chamado está sendo criado ou aberto.
+
+```mermaid
+flowchart LR
+    cliente([cliente]) --> t1[tickets] & p1[profile]
+    atendente([atendente]) --> q2[queue] & m2[mine] & i2[inbox] & p2[profile]
+    admin([admin]) --> q3[queue] & u3[users] & i3[inbox] & p3[profile]
+```
+
+### Módulos
+
+```mermaid
+flowchart TD
+    app["app.js<br/>tab state, autenticação, roteamento"]
+    hooks["hooks/<br/>estado + chamadas à API"]
+    screens["screens/<br/>telas agrupadas por domínio"]
+    components["components/<br/>componentes compostos"]
+    ui["ui.js<br/>design system"]
+    theme["theme.js<br/>cores, status, prioridade, categoria, papel"]
+    utils["utils/<br/>formatWhen (datas pt-BR)"]
+    api["apiClient.js<br/>XMLHttpRequest + JWT, 3 tentativas"]
+    store["authStore.js<br/>token no SecureStore"]
+    company["company.js<br/>dados fictícios da empresa"]
+
+    app --> hooks
+    app --> screens
+    app --> ui
+    hooks --> api
+    hooks --> store
+    screens --> components
+    screens --> ui
+    screens --> utils
+    screens --> company
+    components --> ui
+    ui --> theme
+    screens --> theme
 ```
 
 ### Fluxo de dados (Props)
 
+```mermaid
+flowchart TD
+    subgraph hooks [Hooks]
+        useAuth["useAuth<br/>token, user"]
+        useTickets["useTickets<br/>tickets, detail, creating"]
+        useUsers["useUsers<br/>users, agents"]
+        useNotifications["useNotifications<br/>notifications, unread"]
+    end
+
+    app[app.js]
+    screen["TicketListScreen<br/>title, tickets, onOpen"]
+    card["TicketCard<br/>ticket, onPress"]
+
+    useAuth & useTickets & useUsers & useNotifications -- estado --> app
+    app -- props --> screen
+    screen -- props --> card
+    card -. onPress .-> screen
+    screen -. onOpen .-> app
+    app -. openTicket .-> useTickets
 ```
-app.js (estado global)
-  ├── useAuth → token, user
-  ├── useTickets → tickets, detail, creating
-  ├── useUsers → users, agents
-  └── useNotifications → notifications, unread
 
-app.js passa props para cada Screen:
-  <TicketListScreen
-    title="Fila"
-    tickets={tickets.tickets}     ← props
-    onOpen={tickets.openTicket}   ← callback (também é prop)
-  />
+Exemplo de uma ação subindo e o estado descendo — atendente muda o status de um chamado:
 
-Screen passa props para componentes:
-  <TicketCard ticket={ticket} onPress={onOpen} />
+```mermaid
+sequenceDiagram
+    actor Atendente
+    participant Tela as TicketDetailScreen
+    participant App as app.js
+    participant Hook as useTickets
+    participant API as API Hono
+
+    Atendente->>Tela: toca no status
+    Tela->>App: onStatus(status)
+    App->>Hook: patchTicket(id, { status }, tab)
+    Hook->>API: PATCH /tickets/:id
+    API-->>Hook: 200
+    Hook->>API: GET /tickets/:id
+    Hook->>API: GET /tickets
+    Hook-->>App: detail e tickets atualizados
+    App-->>Tela: novas props
 ```
 
 **Padrão:** Dados descem, ações sobem. A tela não faz fetch — o hook faz. A tela não muta estado — chama callback que o hook expõe.
@@ -67,44 +119,55 @@ Screen passa props para componentes:
 
 ## Componentes reutilizáveis (`ui.js`)
 
-Biblioteca de design system. Cada componente é uma função que retorna JSX com estilos consistentes.
+Biblioteca de design system. Cada componente é uma função que retorna JSX com estilos consistentes, usando as cores de `theme.js`.
 
 | Componente | O que faz | Por quê |
 |---|---|---|
-| `Screen` | Wrapper de todas as telas. `KeyboardAvoidingView` + padding responsivo | Evita que teclado cubra inputs no iOS |
-| `Card` | Container branco, bordas arredondadas, sombra sutil | Agrupa visualmente informações relacionadas |
-| `Title` | Texto grande (28px, extra-bold) | Cabeçalho de cada tela |
+| `Screen` | Wrapper de todas as telas. `KeyboardAvoidingView` (padding no iOS) + padding por plataforma | Evita que teclado cubra inputs no iOS |
+| `Card` | Container branco com borda, cantos arredondados e sombra sutil | Agrupa visualmente informações relacionadas |
+| `Title` | Texto grande (28px, peso 800) | Cabeçalho de cada tela |
 | `Muted` | Texto menor (14px, cinza) | Descrições e textos secundários |
 | `Badge` | Pílula colorida (fundo + texto) | Indica estado de forma compacta |
-| `Field` | Label + `TextInput` estilizado | Todo formulário precisa de input |
-| `Button` | Botão com 3 variantes: primary, ghost, danger | Ações principais, secundárias e destrutivas |
-| `Chip` | Pílula clicável (selecionado/não selecionado) | Substitui Picker/Radio de forma visual |
-| `TabBar` | Barra inferior com abas + badge | Navegação principal (polegar acessível) |
+| `Field` | Label + `TextInput` estilizado, com `secure` e `multiline` | Todo formulário precisa de input |
+| `Button` | Botão com 3 variantes (primary, ghost, danger) e estado `loading` | Ações principais, secundárias e destrutivas |
+| `Chip` | Pílula clicável (selecionado/não selecionado) | Seleção visual de prioridade, status, papel e atendente |
+| `TabBar` | Barra inferior com abas + badge de contagem | Navegação principal (polegar acessível) |
 
 ### Componentes compostos (`components/`)
 
 | Componente | O que faz |
 |---|---|
 | `BackLink` | Texto clicável "Voltar" — mais leve que um botão |
-| `ChipGroup` | Label + linha de Chips — para seleção de prioridade, categoria, status |
+| `ChipGroup` | Label + linha de Chips — seleção de prioridade, status e papel |
 | `EmptyState` | Card com "nenhum resultado" — lista vazia sem parecer erro |
 | `ErrorText` | Texto vermelho de erro — só renderiza se houver children |
-| `TicketCard` | Resumo de chamado: status, prioridade, título, descrição, data |
+
+O `TicketCard` não fica em `components/`: ele é exportado de `screens/tickets.js`, junto das telas de chamado. Mostra status, prioridade, título, descrição, categoria, data e atendente.
 
 ---
 
 ## Telas (`screens/`)
 
-| Tela | Componentes usados | Hook | Descrição |
+As telas ficam agrupadas por domínio, e `screens/index.js` reexporta todas:
+
+| Arquivo | Exporta |
+|---|---|
+| `auth.js` | `LoginScreen`, `RegisterScreen` |
+| `tickets.js` | `TicketCard`, `TicketListScreen`, `NewTicketScreen`, `TicketDetailScreen` |
+| `notifications.js` | `NotificationsScreen` |
+| `profile.js` | `ProfileScreen` |
+| `users.js` | `UsersScreen` |
+
+| Tela | Componentes usados | Estado local | Descrição |
 |---|---|---|---|
-| `LoginScreen` | Screen, ScrollView, Field, Button, ErrorText | useState (email, password) | Login com credenciais demo |
-| `RegisterScreen` | Screen, ScrollView, Field, Button, ErrorText | useState (name, email, password) | Cadastro de cliente |
-| `TicketListScreen` | Screen, FlatList, Title, Button, EmptyState, TicketCard | — | Lista de chamados (fila/meus/cliente) |
-| `NewTicketScreen` | Screen, ScrollView, BackLink, Field, Picker, ChipGroup, Button | useState (title, description, priority, category) | Abertura de chamado |
-| `TicketDetailScreen` | Screen, ScrollView, BackLink, Badge, Chip, ChipGroup, Slider, Button | useState (satisfaction) | Detalhe + ações (atribuir, status, avaliar) |
-| `NotificationsScreen` | Screen, FlatList, Pressable, Card, EmptyState | — | Fila ao vivo (polling 8s) |
-| `ProfileScreen` | Screen, Card, Image, Badge, Switch, Button | useState (notifyEnabled), useMemo | Perfil do usuário + empresa |
-| `UsersScreen` | Screen, ScrollView, Field, Picker, Chip, ChipGroup, Button | useState (open, name, email, password, role) | CRUD de usuários |
+| `LoginScreen` | Screen, ScrollView, Pressable, Image, Title, Muted, Card, Field, Button, ErrorText | useState (email, password) | Login, já preenchido com a conta de cliente demo |
+| `RegisterScreen` | Screen, ScrollView, Pressable, Title, Muted, Card, Field, Button, ErrorText | useState (name, email, password) | Cadastro de cliente |
+| `TicketListScreen` | Screen, Title, Muted, Button, FlatList, TicketCard, EmptyState | — | Lista de chamados: "Meus chamados" (cliente), "Fila" e "Comigo" (equipe). Só o cliente vê "Novo chamado" |
+| `NewTicketScreen` | Screen, BackLink, Title, Muted, ScrollView, Card, Field, ChipGroup, Picker, Button | useState (title, description, priority, category) | Abertura de chamado |
+| `TicketDetailScreen` | Screen, BackLink, ScrollView, Badge, Title, Muted, Card, Chip, ChipGroup, Slider, Button | useState (satisfaction) | Detalhe e histórico. Equipe atribui atendente e muda status; cliente cancela chamado aberto; admin exclui; cliente avalia chamado resolvido (1–5, só local, não vai para a API) |
+| `NotificationsScreen` | Screen, Title, Pressable, Muted, FlatList, Card, EmptyState | — | "Fila ao vivo" da equipe, alimentada pelo polling do `useNotifications`. "Limpar" zera a lista |
+| `ProfileScreen` | Screen, Title, Card, Image, Muted, Badge, Switch, Button | useState (notifyEnabled), useMemo | Perfil do usuário + dados da empresa. O Switch de notificações é só local. Sair pede confirmação com `Alert` |
+| `UsersScreen` | Screen, Title, Muted, Button, Card, Field, ChipGroup, ScrollView, Chip | useState (open, name, email, password, role) | CRUD de usuários (só admin): criar, mudar papel, ativar/desativar, remover |
 
 ---
 
@@ -112,32 +175,51 @@ Biblioteca de design system. Cada componente é uma função que retorna JSX com
 
 | Hook | Estado | Funções |
 |---|---|---|
-| `useAuth` | token, user, boot, authError, authLoading | login(), register(), logout() |
-| `useTickets` | tickets[], detail, creating, saving | refreshTickets(), openTicket(), createTicket(), patchTicket(), deleteTicket() |
-| `useUsers` | users[], agents[] | refreshUsers(), createUser(), toggleUser(), changeRole(), deleteUser() |
-| `useNotifications` | notifications[], unread | openNotification(), markSeen(), clearNotifications() |
+| `useAuth()` | token, user, boot, authError, authLoading | login(), register(), logout(), setAuthError() |
+| `useTickets(token)` | tickets, detail, creating, saving | refreshTickets(), openTicket(), createTicket(), patchTicket(), deleteTicket(), clearDetail(), startCreating(), cancelCreating() |
+| `useUsers(token, isStaff)` | users, agents | refreshUsers(), createUser(), toggleUser(), changeRole(), deleteUser() |
+| `useNotifications(token, isStaff, onRefreshTickets)` | notifications, unread | openNotification(), markSeen(), clearNotifications() |
+
+- `useAuth` restaura o token salvo no boot e valida com `GET /auth/me`; se falhar, apaga o token.
+- `useTickets.refreshTickets(tab)` chama `GET /tickets`, com `?mine=1` na aba `mine`. Quem filtra por cliente é a API.
+- `useUsers` só busca quando o usuário é da equipe. `agents` são os usuários com papel atendente ou admin.
+- `useNotifications` faz polling de `GET /notifications?since=…` a cada 8s, só para a equipe, e chama `onRefreshTickets` quando chega algo novo.
 
 ---
 
-## Componentes nativos do React Native
+## Componentes nativos e bibliotecas
 
-| Componente | Onde |
-|---|---|
-| `View` | Todos os componentes e telas |
-| `Text` | Todos os componentes e telas |
-| `Image` | LoginScreen (logo) + ProfileScreen (avatar) |
-| `TextInput` | Via `Field` em ui.js |
-| `Picker` | NewTicketScreen (seletor de categoria) |
-| `Slider` | TicketDetailScreen (avaliação de satisfação 1-5) |
-| `Switch` | ProfileScreen (toggle de notificações) |
-| `ScrollView` | Login, Register, TicketDetail, NewTicket |
-| `FlatList` | TicketListScreen + NotificationsScreen |
+| Componente | De onde vem | Onde |
+|---|---|---|
+| `View`, `Text` | `react-native` | Todos os componentes e telas |
+| `Image` | `react-native` | LoginScreen (logo) + ProfileScreen (avatar), ambos com `assets/logo.png` |
+| `TextInput` | `react-native` | Via `Field` em ui.js |
+| `Pressable` | `react-native` | Button, Chip, TabBar, BackLink, TicketCard e links de texto |
+| `ScrollView` | `react-native` | Login, Register, NewTicket, TicketDetail, Users |
+| `FlatList` | `react-native` | TicketListScreen + NotificationsScreen |
+| `Switch` | `react-native` | ProfileScreen (toggle de notificações) |
+| `Slider` | `react-native` | TicketDetailScreen (avaliação de satisfação 1–5) |
+| `ActivityIndicator` | `react-native` | Boot do app + `Button` em loading |
+| `KeyboardAvoidingView` | `react-native` | Via `Screen` em ui.js |
+| `Alert` | `react-native` | ProfileScreen (confirmação de saída) |
+| `Picker` | `@react-native-picker/picker` | NewTicketScreen (seletor de categoria) |
+| `SecureStore` | `expo-secure-store` | authStore.js (token JWT) |
+| `StatusBar` | `expo-status-bar` | app.js |
+
+---
+
+## API (`api/`)
+
+- Hono com rotas `/health`, `/auth`, `/users`, `/tickets` e `/notifications`.
+- Banco SQLite nativo do Node (`node:sqlite`, exige Node 22.5+). Localmente fica em `api/data/aether.db`; `DATABASE_URL=file:...` troca o caminho.
+- Na Vercel o banco é **em memória**: os dados somem quando a function reinicia. Os usuários demo são recriados toda vez que a API sobe.
+- Senhas com PBKDF2-SHA256 (`node:crypto`), JWT com `jose`.
 
 ---
 
 ## Como rodar
 
-No **iPhone**, `localhost` é o próprio aparelho. Configure `EXPO_PUBLIC_API_URL` para a API em produção ou use LAN no emulador/dispositivo na mesma rede. O Metro usa túnel (`npm start`) para o Expo Go carregar o JS.
+Sem `EXPO_PUBLIC_API_URL`, o app usa a API de produção (`https://react-native-apps.vercel.app`). No **iPhone**, `localhost` é o próprio aparelho: para usar a API local, aponte `EXPO_PUBLIC_API_URL` para o IP da máquina na mesma rede. O `npm start` sobe o Metro com túnel (`expo start --tunnel`) para o Expo Go carregar o JS.
 
 ```bash
 cd mobile
@@ -171,10 +253,11 @@ EXPO_PUBLIC_API_URL=http://localhost:3001 npx expo start --lan
 
 ```
 aether-desk/
-  api/       backend Hono + LibSQL (Vercel)
+  api/       backend Hono + node:sqlite (Vercel)
   mobile/    Expo (cliente, atendente, admin)
+  assets/    logo.png usado no login e no perfil
 ```
 
-Na Vercel: publique o subdiretório `api` como projeto da API e `mobile` como front (export estático do Expo: `npx expo export --platform web`).
+Na Vercel: publique o subdiretório `api` como projeto da API (`api/vercel.json` manda tudo para a function `api/index.js`) e `mobile` como front (`mobile/vercel.json` roda `npx expo export --platform web` e publica `dist`).
 
 Arquitetura para slides: `leo-vault/personal/faculdade/dispositivos-moveis/aether-desk/`.
