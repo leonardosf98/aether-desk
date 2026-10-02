@@ -8,6 +8,40 @@ Empresa fictícia com placeholders em `mobile/company.js` e `api/src/company.js`
 
 ## Arquitetura
 
+### Organização das pastas e arquivos
+
+```
+aether-desk/
+  api/                 backend Hono + SQLite
+    src/
+      app.js           monta a API (CORS, rotas)
+      server.js        sobe o servidor local
+      auth.js          JWT (sign / verify)
+      password.js      hash / verify de senha (PBKDF2)
+      http.js          withUser, requireRoles, helpers
+      db.js            conexão SQLite + migrate + mappers
+      seed.js          usuários e dados demo
+      company.js       dados fictícios da empresa
+      routes/
+        users.js       /auth e /users
+        tickets.js     /tickets e /notifications
+  mobile/              app Expo (cliente, atendente, admin)
+    app.js             tab state, autenticação, roteamento
+    index.js           entry do Expo
+    apiClient.js       HTTP + JWT (retries)
+    authStore.js       token no SecureStore
+    company.js         dados fictícios da empresa
+    theme.js           cores, status, prioridade, papel
+    ui.js              design system (Screen, Button, Chip…)
+    hooks/             estado + chamadas à API por domínio
+    screens/           telas agrupadas por domínio
+    components/        componentes compostos (BackLink, EmptyState…)
+    utils/             helpers (ex.: formatWhen)
+  assets/              logo.png (login e perfil)
+```
+
+Cada pasta do mobile tem um `index.js` (barrel) pra importar de um lugar só (`from "./hooks"`, `from "./screens"`, etc.).
+
 ### Roteamento manual
 
 O projeto **deliberadamente não usa React Navigation**. O roteamento é feito com `useState` no `app.js` — cada valor de `tab` mapeia para um componente React. Isso deixa claro o conceito de "estado controla a UI".
@@ -135,12 +169,12 @@ Biblioteca de design system. Cada componente é uma função que retorna JSX com
 
 ### Componentes compostos (`components/`)
 
-| Componente | O que faz |
-|---|---|
-| `BackLink` | Texto clicável "Voltar" — mais leve que um botão |
-| `ChipGroup` | Label + linha de Chips — seleção de prioridade, status e papel |
-| `EmptyState` | Card com "nenhum resultado" — lista vazia sem parecer erro |
-| `ErrorText` | Texto vermelho de erro — só renderiza se houver children |
+| Componente | O que faz | Por quê |
+|---|---|---|
+| `BackLink` | Texto clicável "Voltar" (label configurável) | Navegação de retorno mais leve que um botão |
+| `ChipGroup` | Label + linha de `Chip` a partir de `options` `[key, label]` | Evita repetir o mapeamento de chips em cada formulário |
+| `EmptyState` | `Card` com texto em negrito via `children` | Lista vazia sem parecer erro de rede |
+| `ErrorText` | Texto vermelho de erro — só renderiza se houver `children` | Feedback de formulário sem ocupar espaço quando não há erro |
 
 O `TicketCard` não fica em `components/`: ele é exportado de `screens/tickets.js`, junto das telas de chamado. Mostra status, prioridade, título, descrição, categoria, data e atendente.
 
@@ -214,6 +248,55 @@ As telas ficam agrupadas por domínio, e `screens/index.js` reexporta todas:
 - Banco SQLite nativo do Node (`node:sqlite`, exige Node 22.5+). Localmente fica em `api/data/aether.db`; `DATABASE_URL=file:...` troca o caminho.
 - Na Vercel o banco é **em memória**: os dados somem quando a function reinicia. Os usuários demo são recriados toda vez que a API sobe.
 - Senhas com PBKDF2-SHA256 (`node:crypto`), JWT com `jose`.
+
+### Autenticação
+
+Fluxo JWT Bearer (sem cookies, sem refresh, sem logout no servidor):
+
+1. Login/registro → `POST /auth/login` ou `/auth/register`
+2. API valida a senha e assina um JWT HS256 (12h) com `sub`, `role`, `name`, `email`
+3. App guarda o token no SecureStore (`aether.token`)
+4. Cada request manda `Authorization: Bearer …`
+5. Handlers usam `withUser` / `requireRoles` (não há middleware global)
+6. Logout no mobile só apaga o token local — o JWT segue válido até expirar
+
+```mermaid
+sequenceDiagram
+    participant App as Mobile
+    participant API as API Hono
+    participant DB as SQLite
+
+    App->>API: POST /auth/login
+    API->>DB: busca user por email
+    API-->>App: { token, user }
+    App->>App: SecureStore(token)
+    App->>API: GET /tickets (Bearer JWT)
+    API->>API: jwtVerify (assinatura)
+    API->>DB: SELECT user WHERE id = payload.sub
+    API-->>App: dados (role vem do banco)
+```
+
+#### Por que não dá para forjar outra role?
+
+O JWT carrega uma claim `role`, mas a API **não usa essa claim para autorizar**. Em `withUser`, o token só entrega o `sub` (id do usuário). A role vem do banco:
+
+```js
+const payload = await readToken(token);
+const result = await db.execute({
+  sql: "SELECT * FROM users WHERE id = ? LIMIT 1",
+  args: [payload.sub],
+});
+const user = mapUser(result.rows[0]);
+```
+
+`requireRoles` olha `user.role` desse registro — não `payload.role`.
+
+Se alguém alterar o JWT na mão:
+
+1. **Sem o `JWT_SECRET`**, qualquer mudança no payload quebra a assinatura HS256 → `jwtVerify` falha → 401.
+2. **Mesmo com um JWT válido**, a claim `role` no token é só informativa; a autorização sempre reconsulta o usuário no DB.
+
+Forjar `role: "admin"` no token não muda nada — ou a assinatura invalida o token, ou a role real continua sendo a do banco.
 
 ---
 
