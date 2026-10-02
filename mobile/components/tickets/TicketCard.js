@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 import { CATEGORY_LABEL, PRIORITY_META, STATUS_META, colors } from "../../theme";
-import { Badge, Card, Muted } from "../../ui";
+import { Badge, Card, Muted } from "../ui";
 import { formatWhen } from "../../utils";
 
 export function TicketCard({ ticket, onPress }) {

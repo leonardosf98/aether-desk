@@ -1,4 +1,4 @@
-import { Field } from "../../ui";
+import { Field } from "../ui";
 
 export function EmailField({ label = "Email", ...props }) {
   return (

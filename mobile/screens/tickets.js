@@ -2,18 +2,24 @@ import { useState } from "react";
 import { FlatList, ScrollView } from "react-native";
 import { COMPANY } from "../company";
 import { CATEGORY_LABEL, PRIORITY_META, STATUS_META } from "../theme";
-import { Badge, Button, Card, Field, Muted, Screen, Title } from "../ui";
 import {
   AssignAgent,
   BackLink,
+  Badge,
+  Button,
+  Card,
   ChipGroup,
   EmptyState,
+  Field,
+  Muted,
   PickerField,
   SatisfactionRating,
+  Screen,
   ScreenHeader,
   TicketCard,
   TicketHistory,
   TicketPeople,
+  Title,
 } from "../components";
 
 const PRIORITY_OPTIONS = Object.entries(PRIORITY_META).map(([key, meta]) => [key, meta.label]);

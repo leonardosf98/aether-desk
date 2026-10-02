@@ -1,6 +1,6 @@
 import { Pressable, Text } from "react-native";
 import { colors } from "../../theme";
-import { Card, Muted } from "../../ui";
+import { Card, Muted } from "../ui";
 import { formatWhen } from "../../utils";
 
 export function NotificationItem({ item, onPress }) {

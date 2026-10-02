@@ -1,8 +1,7 @@
 import Slider from "@react-native-community/slider";
 import { useState } from "react";
 import { colors } from "../../theme";
-import { Card, Muted } from "../../ui";
-import { SectionTitle } from "../common/SectionTitle";
+import { Card, Muted, SectionTitle } from "../ui";
 
 function ratingLabel(value) {
   if (value <= 2) return "Ruim";

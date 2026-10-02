@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { Muted, Title } from "../../ui";
+import { Muted, Title } from "../ui";
 
 export function ScreenHeader({ title, subtitle, action, style }) {
   return (

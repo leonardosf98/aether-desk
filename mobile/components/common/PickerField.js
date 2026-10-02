@@ -1,7 +1,7 @@
 import { Picker } from "@react-native-picker/picker";
 import { Text, View } from "react-native";
 import { colors } from "../../theme";
-import { inputBox } from "../../ui";
+import { inputBox } from "../ui";
 
 export function PickerField({ label, options, value, onChange }) {
   return (

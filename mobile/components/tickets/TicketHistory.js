@@ -1,8 +1,7 @@
 import { Text, View } from "react-native";
 import { colors } from "../../theme";
-import { Muted } from "../../ui";
+import { Muted, SectionTitle } from "../ui";
 import { formatWhen } from "../../utils";
-import { SectionTitle } from "../common/SectionTitle";
 
 export function TicketHistory({ events }) {
   return (

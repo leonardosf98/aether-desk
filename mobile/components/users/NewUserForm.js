@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Keyboard } from "react-native";
 import { ROLE_LABEL } from "../../theme";
-import { Button, Card, Field } from "../../ui";
+import { Button, Card, ErrorText, Field } from "../ui";
 import { ChipGroup } from "../common/ChipGroup";
 import { EmailField } from "../common/EmailField";
-import { ErrorText } from "../common/ErrorText";
 import { PasswordField } from "../common/PasswordField";
 
 const EMPTY_FORM = { name: "", email: "", password: "", role: "cliente" };

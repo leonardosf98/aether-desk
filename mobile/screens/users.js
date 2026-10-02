@@ -1,6 +1,5 @@
 import { FlatList } from "react-native";
-import { Screen } from "../ui";
-import { NewUserForm, ScreenHeader, UserCard } from "../components";
+import { NewUserForm, Screen, ScreenHeader, UserCard } from "../components";
 
 export function UsersScreen({ users, onCreate, onToggle, onRole, onDelete }) {
   return (

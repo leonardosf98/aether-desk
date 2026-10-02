@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { ROLE_LABEL, colors } from "../../theme";
-import { Button, Card, Chip, Muted } from "../../ui";
+import { Button, Card, Chip, Muted } from "../ui";
 
 export function UserCard({ user, onToggle, onRole, onDelete }) {
   return (

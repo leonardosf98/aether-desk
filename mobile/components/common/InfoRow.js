@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { colors } from "../../theme";
-import { Muted } from "../../ui";
+import { Muted } from "../ui";
 
 export function InfoRow({ label, value }) {
   return (

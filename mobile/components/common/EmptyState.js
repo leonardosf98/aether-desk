@@ -1,6 +1,6 @@
 import { Text } from "react-native";
 import { colors } from "../../theme";
-import { Card } from "../../ui";
+import { Card } from "../ui";
 
 /*
   Estado vazio: Card com texto em negrito via children.

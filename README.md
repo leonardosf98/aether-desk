@@ -31,12 +31,13 @@ aether-desk/
     apiClient.js       HTTP + JWT (retries)
     authStore.js       token no SecureStore
     company.js         dados fictícios da empresa
-    theme.js           cores, status, prioridade, papel
-    ui.js              design system (Screen, Button, Chip…)
+    theme.js           tokens: cores, status, prioridade, papel
     hooks/             estado + chamadas à API por domínio
     screens/           telas agrupadas por domínio
     components/        barrel index.js
-      common/          layout, formulário, links (BackLink, FormScroll…)
+      ui/              primitivos do design system (Screen, Button, Chip…)
+      common/          compostos genéricos: layout, formulário, links (BackLink, FormScroll…)
+      navigation/      TabBar
       tickets/         lista e detalhe de chamados (TicketCard…)
       users/           CRUD de usuários (UserCard, NewUserForm)
       profile/         perfil e dados da empresa
@@ -45,7 +46,7 @@ aether-desk/
     assets/            logo.png (login e perfil)
 ```
 
-`hooks/`, `screens/` e `utils/` têm `index.js` (barrel). `components/index.js` reexporta `common/` e as subpastas por domínio — nas telas use `from "../components"`.
+`hooks/`, `screens/` e `utils/` têm `index.js` (barrel). `components/index.js` reexporta `ui/`, `common/`, `navigation/` e as subpastas por domínio — nas telas e no `app.js` use `from "../components"`. Dentro de `components/`, importe os primitivos de `../ui`.
 
 ### Roteamento manual
 
@@ -86,9 +87,9 @@ flowchart TD
     app["app.js<br/>tab state, autenticação, roteamento"]
     hooks["hooks/<br/>estado + chamadas à API"]
     screens["screens/<br/>telas agrupadas por domínio"]
-    components["components/<br/>common + domínios<br/>(tickets, users…)"]
-    ui["ui.js<br/>design system"]
-    theme["theme.js<br/>cores, status, prioridade, categoria, papel"]
+    components["components/<br/>common, navigation + domínios<br/>(tickets, users…)"]
+    ui["components/ui/<br/>primitivos do design system"]
+    theme["theme.js<br/>tokens: cores, status, prioridade, categoria, papel"]
     utils["utils/<br/>formatWhen (datas pt-BR)"]
     api["apiClient.js<br/>XMLHttpRequest + JWT, 3 tentativas"]
     store["authStore.js<br/>token no SecureStore"]
@@ -96,7 +97,7 @@ flowchart TD
 
     app --> hooks
     app --> screens
-    app --> ui
+    app --> components
     hooks --> api
     hooks --> store
     screens --> components
@@ -156,9 +157,20 @@ sequenceDiagram
 
 ---
 
-## Componentes reutilizáveis (`ui.js`)
+## Design system em camadas
 
-Biblioteca de design system. Cada componente é uma função que retorna JSX com estilos consistentes, usando as cores de `theme.js`.
+| Camada | Onde | O que guarda | Pode importar |
+|---|---|---|---|
+| Tokens | `theme.js` | Só valores: cores, status, prioridade, papel | nada |
+| Primitivos | `components/ui/` | Blocos visuais genéricos, sem regra de negócio | `theme.js` |
+| Compostos | `components/common/`, `navigation/` e domínios | Peças montadas com os primitivos | `ui/`, `theme.js`, `utils/` |
+| Telas | `screens/` | Composição da tela, recebe estado por props | `components/`, `theme.js`, `utils/`, `company.js` |
+
+Regra: `ui/` não importa nada do resto de `components/`. Se um componente precisa conhecer chamado, usuário ou empresa, ele é composto, não primitivo.
+
+### Primitivos (`components/ui/`)
+
+Um arquivo por primitivo, reexportados por `components/ui/index.js`. Cada um é uma função que retorna JSX com estilos consistentes, usando as cores de `theme.js`.
 
 | Componente | O que faz | Por quê |
 |---|---|---|
@@ -170,7 +182,9 @@ Biblioteca de design system. Cada componente é uma função que retorna JSX com
 | `Field` | Label + `TextInput` estilizado, com `secure` e `multiline` | Todo formulário precisa de input |
 | `Button` | Botão com 3 variantes (primary, ghost, danger) e estado `loading` | Ações principais, secundárias e destrutivas |
 | `Chip` | Pílula clicável (selecionado/não selecionado) | Seleção visual de prioridade, status, papel e atendente |
-| `TabBar` | Barra inferior com abas + badge de contagem | Navegação principal (polegar acessível) |
+| `SectionTitle` | Texto em negrito com espaço abaixo | Título de seção dentro de um card |
+| `ErrorText` | Texto vermelho, só renderiza com mensagem | Erro de formulário |
+| `inputBox` | Objeto de estilo (fundo, borda, raio) | Visual comum entre `Field` e `PickerField` |
 
 ### Componentes compostos (`components/`)
 
@@ -178,7 +192,8 @@ Import único via `components/index.js`. Subpastas por domínio; o que é transv
 
 | Pasta | Componentes | Papel |
 |---|---|---|
-| `common/` | `BackLink`, `TextLink`, `ChipGroup`, `EmptyState`, `ErrorText`, `FormScroll`, `ScreenHeader`, `SectionTitle`, `Logo`, `EmailField`, `PasswordField`, `PickerField`, `SwitchRow`, `InfoRow` | Layout, auth, formulários e feedback |
+| `common/` | `BackLink`, `TextLink`, `ChipGroup`, `EmptyState`, `FormScroll`, `ScreenHeader`, `Logo`, `EmailField`, `PasswordField`, `PickerField`, `SwitchRow`, `InfoRow` | Layout, auth, formulários e feedback |
+| `navigation/` | `TabBar` | Barra inferior com abas + badge de contagem, usada só no `app.js` |
 | `tickets/` | `TicketCard`, `TicketPeople`, `AssignAgent`, `TicketHistory`, `SatisfactionRating` | Lista, detalhe e ações do chamado |
 | `users/` | `UserCard`, `NewUserForm` | Administração de usuários |
 | `profile/` | `UserSummary`, `CompanyCard` | Conta e dados fictícios da empresa |
@@ -233,14 +248,14 @@ As telas ficam agrupadas por domínio, e `screens/index.js` reexporta todas:
 |---|---|---|
 | `View`, `Text` | `react-native` | Todos os componentes e telas |
 | `Image` | `react-native` | Via `Logo` e `UserSummary` (`mobile/assets/logo.png`) |
-| `TextInput` | `react-native` | Via `Field` em ui.js |
+| `TextInput` | `react-native` | Via `Field` (`components/ui`) |
 | `Pressable` | `react-native` | Button, Chip, TabBar, TextLink, TicketCard, NotificationItem |
 | `ScrollView` | `react-native` | FormScroll, NewTicket, TicketDetail |
 | `FlatList` | `react-native` | TicketListScreen, NotificationsScreen, UsersScreen |
 | `Switch` | `react-native` | Via `SwitchRow` no ProfileScreen |
 | `Slider` | `@react-native-community/slider` | Via `SatisfactionRating` no detalhe do chamado |
 | `ActivityIndicator` | `react-native` | Boot do app + `Button` em loading |
-| `KeyboardAvoidingView` | `react-native` | Via `Screen` em ui.js |
+| `KeyboardAvoidingView` | `react-native` | Via `Screen` (`components/ui`) |
 | `Alert` | `react-native` | ProfileScreen (confirmação de saída) |
 | `Picker` | `@react-native-picker/picker` | Via `PickerField` em NewTicketScreen |
 | `SecureStore` | `expo-secure-store` | authStore.js (token JWT) |
@@ -344,7 +359,7 @@ EXPO_PUBLIC_API_URL=http://localhost:3001 npx expo start --lan
 aether-desk/
   api/       backend Hono + node:sqlite (Vercel)
   mobile/    Expo (cliente, atendente, admin)
-             assets/logo.png · components/{common,tickets,users,profile,notifications}
+             assets/logo.png · components/{ui,common,navigation,tickets,users,profile,notifications}
 ```
 
 Na Vercel: publique o subdiretório `api` como projeto da API (`api/vercel.json` manda tudo para a function `api/index.js`) e `mobile` como front (`mobile/vercel.json` roda `npx expo export --platform web` e publica `dist`).

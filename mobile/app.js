@@ -13,7 +13,7 @@ import {
   UsersScreen,
 } from "./screens";
 import { colors } from "./theme";
-import { TabBar } from "./ui";
+import { TabBar } from "./components";
 
 function tabsFor(role) {
   if (role === "cliente") {

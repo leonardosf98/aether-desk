@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { Alert } from "react-native";
-import { Button, Card, Screen } from "../ui";
-import { CompanyCard, ScreenHeader, SwitchRow, UserSummary } from "../components";
+import {
+  Button,
+  Card,
+  CompanyCard,
+  Screen,
+  ScreenHeader,
+  SwitchRow,
+  UserSummary,
+} from "../components";
 
 function confirmLogout(onLogout) {
   Alert.alert("Sair", "Encerrar sessão?", [

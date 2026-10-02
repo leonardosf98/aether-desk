@@ -1,7 +1,6 @@
 import { COMPANY } from "../../company";
-import { Card } from "../../ui";
+import { Card, SectionTitle } from "../ui";
 import { InfoRow } from "../common/InfoRow";
-import { SectionTitle } from "../common/SectionTitle";
 
 const COMPANY_FIELDS = [
   ["Razão social", COMPANY.razaoSocial],

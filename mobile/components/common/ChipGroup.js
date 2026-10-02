@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { colors } from "../../theme";
-import { Chip } from "../../ui";
+import { Chip } from "../ui";
 
 /*
   Grupo de chips com label: monta uma linha de Chip a partir de options [key, label].

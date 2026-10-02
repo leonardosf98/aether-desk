@@ -1,6 +1,5 @@
 import { View } from "react-native";
-import { Chip } from "../../ui";
-import { SectionTitle } from "../common/SectionTitle";
+import { Chip, SectionTitle } from "../ui";
 
 export function AssignAgent({ agents, agentId, onAssign }) {
   return (

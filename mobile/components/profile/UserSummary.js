@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { ROLE_LABEL, colors } from "../../theme";
-import { Badge, Card, Muted } from "../../ui";
+import { Badge, Card, Muted } from "../ui";
 import { Logo } from "../common/Logo";
 
 export function UserSummary({ user }) {

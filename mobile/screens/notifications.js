@@ -1,6 +1,5 @@
 import { FlatList } from "react-native";
-import { Screen } from "../ui";
-import { EmptyState, NotificationItem, ScreenHeader, TextLink } from "../components";
+import { EmptyState, NotificationItem, Screen, ScreenHeader, TextLink } from "../components";
 
 export function NotificationsScreen({ items, onOpen, onMarkSeen }) {
   return (

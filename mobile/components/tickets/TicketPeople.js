@@ -1,4 +1,4 @@
-import { Card } from "../../ui";
+import { Card } from "../ui";
 import { InfoRow } from "../common/InfoRow";
 
 export function TicketPeople({ ticket }) {
