@@ -11,6 +11,11 @@ export const colors = {
   success: "#0284C7",
   danger: "#BE123C",
   warn: "#C2410C",
+  dangerSoft: "#FFE4E6",
+  inputBg: "#F8FBFF",
+  placeholder: "#94A3B8",
+  onPrimary: "#FFFFFF",
+  switchThumbOff: "#F4F3F4",
 };
 
 export const STATUS_META = {

@@ -47,7 +47,7 @@ export function Card({ children, style }) {
           padding: 20,
           borderWidth: 1,
           borderColor: colors.line,
-          shadowColor: "#1E3A8A",
+          shadowColor: colors.primaryDark,
           shadowOpacity: 0.06,
           shadowRadius: 12,
           shadowOffset: { width: 0, height: 6 },
@@ -98,6 +98,13 @@ export function Badge({ label, color, bg }) {
   );
 }
 
+export const inputBox = {
+  backgroundColor: colors.inputBg,
+  borderWidth: 1,
+  borderColor: colors.line,
+  borderRadius: 14,
+};
+
 export function Field({
   label,
   value,
@@ -117,48 +124,50 @@ export function Field({
         onChangeText={onChangeText}
         secureTextEntry={secure}
         placeholder={placeholder}
-        placeholderTextColor="#94A3B8"
+        placeholderTextColor={colors.placeholder}
         multiline={multiline}
         textAlignVertical={multiline ? "top" : "center"}
         returnKeyType={multiline ? "default" : "done"}
         blurOnSubmit={!multiline}
-        style={{
-          backgroundColor: "#F8FBFF",
-          borderWidth: 1,
-          borderColor: colors.line,
-          borderRadius: 14,
-          paddingHorizontal: 14,
-          paddingVertical: multiline ? 12 : 12,
-          minHeight: multiline ? 110 : 48,
-          color: colors.text,
-          fontSize: 16,
-        }}
+        style={[
+          inputBox,
+          {
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+            minHeight: multiline ? 110 : 48,
+            color: colors.text,
+            fontSize: 16,
+          },
+        ]}
         {...inputProps}
       />
     </View>
   );
 }
 
-export function Button({ title, onPress, variant = "primary", disabled, loading }) {
+export function Button({ title, onPress, variant = "primary", disabled, loading, style }) {
   const map = {
-    primary: { bg: colors.primary, color: "#fff" },
+    primary: { bg: colors.primary, color: colors.onPrimary },
     ghost: { bg: colors.primarySoft, color: colors.primaryDark },
-    danger: { bg: "#FFE4E6", color: colors.danger },
+    danger: { bg: colors.dangerSoft, color: colors.danger },
   };
   const tone = map[variant] || map.primary;
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      style={({ pressed }) => ({
-        backgroundColor: tone.bg,
-        borderRadius: 16,
-        minHeight: 50,
-        alignItems: "center",
-        justifyContent: "center",
-        opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
-        paddingHorizontal: 16,
-      })}
+      style={({ pressed }) => [
+        {
+          backgroundColor: tone.bg,
+          borderRadius: 16,
+          minHeight: 50,
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
+          paddingHorizontal: 16,
+        },
+        style,
+      ]}
     >
       {loading ? (
         <ActivityIndicator color={tone.color} />
@@ -186,7 +195,7 @@ export function Chip({ label, selected, onPress }) {
     >
       <Text
         style={{
-          color: selected ? "#fff" : colors.muted,
+          color: selected ? colors.onPrimary : colors.muted,
           fontWeight: "700",
           fontSize: 13,
         }}
@@ -243,7 +252,7 @@ export function TabBar({ tabs, current, onChange, badge }) {
                     paddingHorizontal: 4,
                   }}
                 >
-                  <Text style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}>
+                  <Text style={{ color: colors.onPrimary, fontSize: 10, fontWeight: "800" }}>
                     {badge.count}
                   </Text>
                 </View>
