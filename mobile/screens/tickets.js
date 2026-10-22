@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { FlatList, ScrollView } from "react-native";
+import { useMemo, useState } from "react";
+import { FlatList, ScrollView, View } from "react-native";
 import { COMPANY } from "../company";
 import { CATEGORY_LABEL, PRIORITY_META, STATUS_META } from "../theme";
 import {
@@ -20,11 +20,38 @@ import {
   TicketHistory,
   TicketPeople,
   Title,
+  Chip,
+  Fab,
+  FieldLabel,
+  Segmented,
 } from "../components";
 
 const PRIORITY_OPTIONS = Object.entries(PRIORITY_META).map(([key, meta]) => [key, meta.label]);
 const STATUS_OPTIONS = Object.entries(STATUS_META).map(([key, meta]) => [key, meta.label]);
 const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABEL);
+
+const FILTER_OPTIONS = [
+  ["abertos", "Em aberto"],
+  ["resolvidos", "Resolvidos"],
+  ["cancelados", "Cancelados"],
+  ["todos", "Todos"],
+];
+
+const PRIORITY_FILTER_OPTIONS = [
+  ["todas", "Todas"],
+  ...Object.entries(PRIORITY_META).map(([key, meta]) => [key, meta.label]),
+];
+
+function matchesFilter(ticket, filter) {
+  if (filter === "todos") return true;
+  if (filter === "resolvidos") return ticket.status === "resolvido";
+  if (filter === "cancelados") return ticket.status === "cancelado";
+  return ticket.status !== "resolvido" && ticket.status !== "cancelado";
+}
+
+function matchesPriority(ticket, priority) {
+  return priority === "todas" || ticket.priority === priority;
+}
 
 export function TicketListScreen({
   title,
@@ -32,27 +59,59 @@ export function TicketListScreen({
   tickets,
   onOpen,
   onCreate,
-  createLabel,
   empty,
 }) {
+  const [filter, setFilter] = useState("abertos");
+  const [priority, setPriority] = useState("todas");
+
+  const visible = useMemo(
+    () =>
+      tickets.filter(
+        (ticket) =>
+          matchesFilter(ticket, filter) && matchesPriority(ticket, priority),
+      ),
+    [tickets, filter, priority],
+  );
+
   return (
     <Screen>
       <ScreenHeader title={title} subtitle={subtitle} />
-      {onCreate ? (
-        <Button
-          title={createLabel || "Novo chamado"}
-          onPress={onCreate}
-          style={{ marginBottom: 14 }}
-        />
-      ) : null}
+      <View style={{ marginBottom: 10 }}>
+        <FieldLabel>Situação</FieldLabel>
+        <Segmented options={FILTER_OPTIONS} value={filter} onChange={setFilter} />
+        <FieldLabel style={{ marginTop: 12 }}>Prioridade</FieldLabel>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingVertical: 2 }}
+        >
+          {PRIORITY_FILTER_OPTIONS.map(([key, label]) => (
+            <Chip
+              key={key}
+              label={label}
+              selected={priority === key}
+              onPress={() => setPriority(key)}
+            />
+          ))}
+        </ScrollView>
+      </View>
       <FlatList
-        data={tickets}
+        data={visible}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => <TicketCard ticket={item} onPress={() => onOpen(item)} />}
-        ListEmptyComponent={<EmptyState>{empty}</EmptyState>}
+        ListEmptyComponent={
+          <EmptyState>
+            {filter === "resolvidos"
+              ? "Nenhum chamado resolvido ainda."
+              : filter === "cancelados"
+                ? "Nenhum chamado cancelado."
+                : empty}
+          </EmptyState>
+        }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 96 }}
       />
+      {onCreate ? <Fab onPress={onCreate} /> : null}
     </Screen>
   );
 }

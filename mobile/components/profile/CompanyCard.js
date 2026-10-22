@@ -5,10 +5,10 @@ import { InfoRow } from "../common/InfoRow";
 const COMPANY_FIELDS = [
   ["Razão social", COMPANY.razaoSocial],
   ["CNPJ", COMPANY.cnpj],
-  ["IE", COMPANY.inscricaoEstadual],
   ["Email", COMPANY.email],
   ["Telefone", COMPANY.telefone],
-  ["Endereço", `${COMPANY.endereco} · ${COMPANY.cidade}/${COMPANY.uf}`],
+  ["Endereço", `${COMPANY.endereco} · ${COMPANY.cidade}/${COMPANY.uf} · CEP 11461-030`],
+  ["Site", COMPANY.site],
 ];
 
 export function CompanyCard() {
