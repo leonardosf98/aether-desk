@@ -12,6 +12,8 @@ import {
   withUser,
 } from "../http.js";
 
+const OPEN_STATUSES = STATUSES.filter((s) => s !== "resolvido" && s !== "cancelado");
+
 const TICKET_SELECT = `
   SELECT t.*,
     c.name AS client_name,
@@ -42,6 +44,23 @@ async function getTicket(db, id) {
     args: [id],
   });
   return mapTicket(result.rows[0]);
+}
+
+async function pickLeastLoadedAgent(db) {
+  const placeholders = OPEN_STATUSES.map(() => "?").join(", ");
+  const result = await db.execute({
+    sql: `SELECT u.id, COUNT(t.id) AS open_tickets
+          FROM users u
+          LEFT JOIN tickets t
+            ON t.agent_id = u.id AND t.status IN (${placeholders})
+          WHERE u.role = 'atendente' AND u.active = 1
+          GROUP BY u.id
+          ORDER BY open_tickets ASC, u.created_at ASC
+          LIMIT 1`,
+    args: OPEN_STATUSES,
+  });
+  const row = result.rows[0];
+  return row ? row.id : null;
 }
 
 function canSeeTicket(user, ticket) {
@@ -138,10 +157,11 @@ export function ticketRoutes(db) {
 
     const id = newId("tkt");
     const stamp = nowIso();
+    const agentId = await pickLeastLoadedAgent(db);
     await db.execute({
       sql: `INSERT INTO tickets (id, title, description, status, priority, category, client_id, agent_id, created_at, updated_at)
-            VALUES (?, ?, ?, 'aberto', ?, ?, ?, NULL, ?, ?)`,
-      args: [id, title, description, priority, category, clientId, stamp, stamp],
+            VALUES (?, ?, ?, 'aberto', ?, ?, ?, ?, ?, ?)`,
+      args: [id, title, description, priority, category, clientId, agentId, stamp, stamp],
     });
     await addEvent(db, {
       ticketId: id,
@@ -149,6 +169,14 @@ export function ticketRoutes(db) {
       type: "created",
       payload: { title, priority, category },
     });
+    if (agentId) {
+      await addEvent(db, {
+        ticketId: id,
+        actorId: auth.user.id,
+        type: "assigned",
+        payload: { from: null, to: agentId },
+      });
+    }
     return c.json({ ticket: await getTicket(db, id) }, 201);
   });
 
