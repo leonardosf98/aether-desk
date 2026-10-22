@@ -2,7 +2,7 @@
 
 Help desk com versões **cliente**, **atendente** e **admin**. Mobile em Expo SDK 57 (React Native 0.86), API em Hono, framework de js bem simples.
 
-Empresa fictícia com placeholders em `mobile/company.js` e `api/src/company.js` (`{{CNPJ}}`, `{{RAZAO_SOCIAL}}`, etc.). Ainda, não fizemos o preenchimento.
+Empresa: dados reais do CNPJ 57.459.005/0001-02 preenchidos em `mobile/company.js` e `api/src/company.js` (os dois precisam ficar iguais).
 
 ---
 
@@ -168,6 +168,11 @@ sequenceDiagram
 
 Regra: `ui/` não importa nada do resto de `components/`. Se um componente precisa conhecer chamado, usuário ou empresa, ele é composto, não primitivo.
 
+## Pendências
+
+- **`SwitchRow` (componente de switch) sem uso em tela.** O componente existe em `components/common/SwitchRow.js` e é exportado pelo barrel, mas nenhum fluxo o usa hoje — o card de notificações do perfil saiu porque o toggle não fazia nada real. Gancho para valer o requisito: um switch instalado em uma ação que já funciona ou que venha a existir (ex.: ativar/desativar conta de usuário pelo admin, ou "avisar quando meu chamado mudar" ligado ao polling/avisos). Quando retomar, é coisa pequena.
+- **Push real de notificações com build próprio (EAS).** O polling in-app da aba Avisos funciona no Expo Go/Snack, mas os banners de push do sistema exigem APK de desenvolvimento (Expo Go não repassa push remoto no Android desde o SDK 53). Depende de conta Expo (grátis) para `eas build`.
+
 ### Primitivos (`components/ui/`)
 
 Um arquivo por primitivo, reexportados por `components/ui/index.js`. Cada um é uma função que retorna JSX com estilos consistentes, usando as cores de `theme.js`.
@@ -218,11 +223,11 @@ As telas ficam agrupadas por domínio, e `screens/index.js` reexporta todas:
 |---|---|---|---|
 | `LoginScreen` | Screen, FormScroll, Logo, ScreenHeader, Card, EmailField, PasswordField, Button, ErrorText | useState (email, password) | Login, já preenchido com a conta de cliente demo |
 | `RegisterScreen` | Screen, FormScroll, BackLink, ScreenHeader, Card, Field, EmailField, PasswordField, Button, ErrorText | useState (name, email, password) | Cadastro de cliente |
-| `TicketListScreen` | Screen, ScreenHeader, Button, FlatList, TicketCard, EmptyState | — | Lista de chamados: "Meus chamados" (cliente), "Fila" e "Comigo" (equipe). Só o cliente vê "Novo chamado" |
+| `TicketListScreen` | Screen, ScreenHeader, Chip, FieldLabel, Segmented, Fab, FlatList, TicketCard, EmptyState | useState (filter, priority) | Lista com filtros combinados de situação e prioridade: "Meus chamados" (cliente), "Fila" e "Comigo" (equipe). Novos chamados entram pelo FAB (só cliente) |
 | `NewTicketScreen` | Screen, BackLink, ScreenHeader, ScrollView, Card, Field, ChipGroup, PickerField, Button | useState (title, description, priority, category) | Abertura de chamado |
 | `TicketDetailScreen` | Screen, BackLink, ScrollView, Badge, Title, Muted, TicketPeople, AssignAgent, ChipGroup, SatisfactionRating, TicketHistory, Button | — | Detalhe e histórico. Equipe atribui atendente e muda status; cliente cancela chamado aberto; admin exclui; cliente avalia chamado resolvido (1–5, só local, não vai para a API) |
 | `NotificationsScreen` | Screen, ScreenHeader, TextLink, FlatList, NotificationItem, EmptyState | — | "Fila ao vivo" da equipe, alimentada pelo polling do `useNotifications`. "Limpar" zera a lista |
-| `ProfileScreen` | Screen, ScreenHeader, UserSummary, CompanyCard, SwitchRow, Button | useState (notifyEnabled) | Perfil do usuário + dados da empresa. O Switch de notificações é só local. Sair pede confirmação com `Alert` |
+| `ProfileScreen` | Screen, ScreenHeader, UserSummary, CompanyCard, Button | — | Perfil do usuário + dados da empresa. Sair pede confirmação com `Alert` |
 | `UsersScreen` | Screen, ScreenHeader, NewUserForm, FlatList, UserCard | — | CRUD de usuários (só admin): criar, mudar papel, ativar/desativar, remover |
 
 ---
