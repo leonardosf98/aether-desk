@@ -2,6 +2,20 @@ export const PRODUCTION_API_URL = "https://react-native-apps.vercel.app";
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || PRODUCTION_API_URL;
 
+function apiLog(...args) {
+  if (typeof __DEV__ !== "undefined" && __DEV__) {
+    console.log("[API]", ...args);
+  }
+}
+
+if (typeof __DEV__ !== "undefined" && __DEV__) {
+  apiLog(
+    "base:",
+    API_URL,
+    process.env.EXPO_PUBLIC_API_URL ? "(EXPO_PUBLIC_API_URL)" : "(produção, env não definida)",
+  );
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -19,8 +33,14 @@ function xhrRequest(url, { method, headers, body }) {
       }
       resolve({ status: xhr.status, data });
     };
-    xhr.onerror = () => reject(new Error("Sem conexão com a API"));
-    xhr.ontimeout = () => reject(new Error("A API demorou demais para responder"));
+    xhr.onerror = () => {
+      apiLog("rede falhou", method, url);
+      reject(new Error("Sem conexão com a API"));
+    };
+    xhr.ontimeout = () => {
+      apiLog("timeout", method, url);
+      reject(new Error("A API demorou demais para responder"));
+    };
     xhr.open(method, url, true);
     Object.entries(headers).forEach(([key, value]) => {
       xhr.setRequestHeader(key, value);
@@ -29,13 +49,18 @@ function xhrRequest(url, { method, headers, body }) {
   });
 }
 
-async function send(url, options) {
+async function send(url, { method, ...options }) {
   let lastError;
   for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (attempt === 0) apiLog("→", method, url);
+    else apiLog("↻ tentativa", attempt + 1, method, url);
     try {
-      return await xhrRequest(url, options);
+      const result = await xhrRequest(url, { method, ...options });
+      apiLog("←", result.status, method, url);
+      return result;
     } catch (error) {
       lastError = error;
+      apiLog("✗", error.message, method, url);
       await sleep(400 * (attempt + 1));
     }
   }
@@ -54,6 +79,7 @@ export async function api(path, { token, method = "GET", body } = {}) {
   });
 
   if (status < 200 || status >= 300) {
+    apiLog("HTTP erro", status, method, `${API_URL}${path}`, data.error || data);
     const error = new Error(data.error || "Falha na requisição");
     error.status = status;
     throw error;
